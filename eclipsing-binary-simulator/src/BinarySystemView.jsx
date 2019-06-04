@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as PIXI from 'pixi.js-legacy';
+import {getSystemTheta, getSystemPhi} from './utils';
 
 const convertPhase = function(phase) {
     return (phase % 1 + 1) % 1;
@@ -21,8 +22,8 @@ export default class BinarySystemView extends React.Component {
             mass2: 1.9,
             radius1: 1.5,
             radius2: 1.4,
-            phi: 23,
-            theta: 130,
+            phi: getSystemPhi(this.props.inclination),
+            theta: getSystemTheta(this.props.longitude),
             showOrbitalPlane: true,
             showOrbitalPaths: true,
             autoScale: true,
@@ -238,7 +239,9 @@ export default class BinarySystemView extends React.Component {
         if (initObject.targetSize!=undefined) this._targetSize = initObject.targetSize;
         if (initObject.showOrbitalPaths!=undefined) this._showOrbitalPaths = Boolean(initObject.showOrbitalPaths);
         if (initObject.showOrbitalPlane!=undefined) this._showOrbitalPlane = Boolean(initObject.showOrbitalPlane);
-        if (initObject.phi!=undefined && !(initObject.phi<-90 || initObject.phi>90)) this._phi = initObject.phi*(Math.PI/180);
+        if (initObject.phi!=undefined && !(initObject.phi<-90 || initObject.phi>90)) {
+            this._phi = initObject.phi*(Math.PI/180);
+        }
         if (initObject.theta!=undefined) this._theta = initObject.theta*(Math.PI/180);
         if (initObject.scale!=undefined) this._scale = initObject.scale;
         if (initObject.linePhi!=undefined) this._linePhi = initObject.linePhi;
@@ -488,13 +491,12 @@ export default class BinarySystemView extends React.Component {
         let belowSpacing;
         let spacing;
         let majorMultiple;
-        if ((k-lg) > (Math.log(2)/Math.LN10)) {
+        if ((k-lg) > (Math.log(2) / Math.LN10)) {
             // use 5*10^(k-1) as the spacing
             belowSpacing = Math.pow(10, k-1);
             spacing = 5*belowSpacing;
             majorMultiple = 2;
-        }
-        else {
+        } else {
             // use 10^k as the spacing
             spacing = Math.pow(10, k);
             belowSpacing = 0.5*spacing;
@@ -507,7 +509,8 @@ export default class BinarySystemView extends React.Component {
         let bottomGridExtent = ceil(bottomFillExtent/spacing);
 
         let minorAlpha = this.minGridLineAlpha + (
-            this.maxGridLineAlpha - this.minGridLineAlpha) * (spacing - m) / (spacing - belowSpacing);
+            this.maxGridLineAlpha - this.minGridLineAlpha
+        ) * (spacing - m) / (spacing - belowSpacing);
         let majorAlpha = this.maxGridLineAlpha;
 
         let gridThickness = this.gridLineStyle.thickness;
@@ -650,6 +653,14 @@ export default class BinarySystemView extends React.Component {
         this.initialize(this.initObject);
     }
     componentDidUpdate(prevProps) {
+        if (prevProps.longitude !== this.props.longitude) {
+            this._theta = getSystemTheta(this.props.longitude) * (Math.PI / 180);
+        }
+
+        if (prevProps.inclination !== this.props.inclination) {
+            this._phi = getSystemPhi(this.props.inclination) * (Math.PI / 180);
+        }
+
         if (
             prevProps.star1Mass !== this.props.star1Mass ||
             prevProps.star2Mass !== this.props.star2Mass ||
